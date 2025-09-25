@@ -1,7 +1,8 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  env: {
+    GCLOUD_PROJECT_ID: process.env.GCLOUD_PROJECT_ID,
+  },
 };
 
 export default nextConfig;
