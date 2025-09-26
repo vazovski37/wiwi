@@ -1,11 +1,11 @@
-// src/components/website-list.tsx
+// src/components/WebsiteList.tsx
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Globe, ArrowUpRight } from "lucide-react";
 
-// Define a type for a single website
+// Define a type for a single website based on the Supabase schema
 type Website = {
   id: number;
   name: string;
@@ -39,7 +39,7 @@ export default function WebsiteList({ websites }: { websites: Website[] }) {
                   </div>
                 </div>
                 <Button variant="outline" size="sm" asChild>
-                  <Link href={`/editor/${site.name}`}> {/* Assuming an editor route */}
+                  <Link href={`/editor/${site.name}`}>
                     Manage
                     <ArrowUpRight className="ml-2 h-4 w-4" />
                   </Link>

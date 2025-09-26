@@ -1,3 +1,5 @@
+// src/components/dashboard-form.tsx
+
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +8,9 @@ import { useFormStatus } from 'react-dom';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import WebsiteList from "./WebsiteList";
+import { useState } from "react";
+import { createWebsiteAction } from "@/app/actions";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -18,32 +23,43 @@ function SubmitButton() {
 }
 
 interface DashboardFormProps {
-    createWebsiteAction: (formData: FormData) => void;
+  websites: { id: number; name: string; url: string; status: string }[];
 }
 
-export default function DashboardForm({ createWebsiteAction }: DashboardFormProps) {
-    return (
+export default function DashboardForm({ websites }: DashboardFormProps) {
+  const [showCreateForm, setShowCreateForm] = useState(websites.length === 0);
+
+  return (
+    <div className="w-full">
+      {showCreateForm ? (
         <Card className="p-4">
-            <CardHeader className="p-0">
-                <CardTitle className="text-xl">Your Websites</CardTitle>
-                <CardDescription>Create and manage your web projects.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 mt-4 flex items-center justify-center border-2 border-dashed rounded-lg p-8 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                <form action={createWebsiteAction}>
-                    <div className="text-center">
-                        <Plus className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-gray-50">No websites created yet</h3>
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new website.</p>
-                        <div className="mt-6 flex flex-col items-center space-y-4">
-                            <div className="w-full">
-                                <Label htmlFor="website-name" className="sr-only">Website Name</Label>
-                                <Input id="website-name" name="website-name" placeholder="Enter website name" required />
-                            </div>
-                            <SubmitButton />
-                        </div>
-                    </div>
-                </form>
-            </CardContent>
+          <CardHeader className="p-0">
+            <CardTitle className="text-xl">Create a New Website</CardTitle>
+            <CardDescription>
+              Enter a name for your new web project.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0 mt-4">
+            <form action={createWebsiteAction}>
+              <div className="flex flex-col items-center space-y-4">
+                <div className="w-full">
+                  <Label htmlFor="website-name" className="sr-only">Website Name</Label>
+                  <Input id="website-name" name="website-name" placeholder="Enter website name" required />
+                </div>
+                <SubmitButton />
+              </div>
+            </form>
+          </CardContent>
         </Card>
-    );
+      ) : (
+        <>
+          <WebsiteList websites={websites} />
+          <Button onClick={() => setShowCreateForm(true)} className="w-full mt-4">
+            <Plus className="mr-2 h-4 w-4" />
+            Create New Website
+          </Button>
+        </>
+      )}
+    </div>
+  );
 }

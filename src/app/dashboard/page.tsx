@@ -1,10 +1,11 @@
+// src/app/dashboard/page.tsx
+
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { createAndDeployWebsite } from "@/lib/google-cloud/api-service";
 import DashboardForm from "@/components/dashboard-form";
+import { createWebsiteAction } from "../actions"; // Import the server action
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -23,58 +24,15 @@ export default async function DashboardPage() {
     await supabase.auth.signOut();
     return redirect("/");
   };
+  
+  const { data: websites, error } = await supabase
+    .from('websites')
+    .select('*')
+    .eq('user_id', user.id);
 
-  /**
-   * Server action to create a new website.
-   * Reads all required environment variables and uses
-   * service account credentials via GOOGLE_APPLICATION_CREDENTIALS.
-   */
-  const createWebsiteAction = async (formData: FormData) => {
-    "use server";
-    const websiteName = formData.get("website-name") as string;
-
-    const projectId = process.env.GCLOUD_PROJECT_ID;
-    const githubOrg = process.env.GITHUB_ORG;
-    const templateRepoUrl = process.env.GITHUB_TEMPLATE_REPO_URL;
-    const githubToken = process.env.GITHUB_TOKEN;
-    const gcloudCreds = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-
-    if (
-      !websiteName ||
-      !projectId ||
-      !githubOrg ||
-      !templateRepoUrl ||
-      !githubToken ||
-      !gcloudCreds
-    ) {
-      console.error("❌ Missing required environment variables or website name.");
-      return {
-        message: "Server configuration error. Please contact support.",
-        status: "error" as const,
-      };
-    }
-
-    const result = await createAndDeployWebsite(
-      projectId,
-      githubOrg,
-      websiteName,
-      templateRepoUrl,
-      githubToken
-    );
-
-    if (result.success) {
-      revalidatePath("/dashboard");
-      return {
-        message: `✅ Successfully created ${websiteName}!`,
-        status: "success" as const,
-      };
-    } else {
-      return {
-        message: result.error || "❌ An unknown error occurred.",
-        status: "error" as const,
-      };
-    }
-  };
+  if (error) {
+    console.error('Error fetching websites:', error);
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-gray-50 dark:bg-gray-900">
@@ -120,7 +78,7 @@ export default async function DashboardPage() {
             <Link href="#">Settings</Link>
           </nav>
           <div className="grid gap-6">
-            <DashboardForm createWebsiteAction={createWebsiteAction} />
+            <DashboardForm createWebsiteAction={createWebsiteAction} websites={websites || []} />
           </div>
         </div>
       </main>
