@@ -74,6 +74,7 @@ export default function WebsiteList({ websites }: { websites: Website[] }) {
               <CardContent className="flex-grow" />
               <CardFooter>
                 <Button asChild className="w-full">
+                  {/* This is the line to change */}
                   <Link href={`/editor/${site.name}`}>
                     Manage Website
                   </Link>

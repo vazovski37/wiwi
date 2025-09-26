@@ -96,10 +96,15 @@ export async function createAndDeployWebsite(
   const uniqueSuffix = Math.random().toString(36).substring(2, 8);
   const baseName = websiteName.toLowerCase().replace(/[^a-z0-9]/g, '-');
   const serviceName = `${baseName}-${uniqueSuffix}`;
-  const newRepoName = serviceName;
+  const newRepoName = serviceName; // This is the unique name for the GitHub repo and service
   const tempDir = path.join('/tmp', `template-clone-${Date.now()}`);
   const logsBucket = `cloud-build-logs-${projectId}-${uniqueSuffix}`;
   const location = 'us-central1';
+  const projectHash = process.env.GCLOUD_PROJECT_HASH;
+
+  if (!projectHash) {
+    throw new Error("GCLOUD_PROJECT_HASH environment variable is not set.");
+  }
 
   try {
     const octokit = new Octokit({ auth: githubToken });
@@ -109,7 +114,6 @@ export async function createAndDeployWebsite(
     });
     const token = await auth.getAccessToken();
 
-    // Storage client for bucket creation
     const storage = new Storage({ auth, projectId });
     console.log(`📦 Creating Cloud Build logs bucket: ${logsBucket}`);
     await storage.createBucket(logsBucket, {
@@ -118,10 +122,8 @@ export async function createAndDeployWebsite(
     });
     await sleep(5000);
 
-    // Cloud Build client
     const cloudBuildClient = new CloudBuildClient({ auth, projectId });
 
-    // 1️⃣ Create GitHub repo
     console.log(`📦 Creating new GitHub repository: ${githubOrg}/${newRepoName}`);
     await octokit.repos.createForAuthenticatedUser({
       name: newRepoName,
@@ -129,16 +131,13 @@ export async function createAndDeployWebsite(
       auto_init: true,
     });
 
-    // 2️⃣ Clone template & commit
     console.log(`⬇️ Cloning template from ${templateRepoUrl}`);
     await fs.mkdir(tempDir, { recursive: true });
-    const gitClient = simpleGit({ timeout: { block: 60000 } });
-    await gitClient.clone(templateRepoUrl, tempDir, ['--depth=1']);
+    await simpleGit({ timeout: { block: 60000 } }).clone(templateRepoUrl, tempDir, ['--depth=1']);
     await fsExtra.remove(path.join(tempDir, '.git'));
     await commitNextJsTemplate(octokit, githubOrg, newRepoName, tempDir);
     await fs.rm(tempDir, { recursive: true, force: true });
 
-    // 3️⃣ Register GitHub repo in Cloud Build connection using REST
     const repoId = `${githubOrg}_${newRepoName}`;
     const connectionParent = `projects/${projectId}/locations/${location}/connections/my-github-connection`;
     try {
@@ -150,15 +149,12 @@ export async function createAndDeployWebsite(
         { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log(`✅ Repo registered in Cloud Build: ${repoId}`);
-      
-      // Add a short delay to allow for synchronization
       console.log('⏱️ Waiting 10 seconds for Cloud Build to recognize the new repository...');
       await sleep(10000);
     } catch (err: any) {
       console.log('⚠️ Repo registration might have failed or already exists:', err.response?.data || err.message);
     }
 
-    // 4️⃣ Create a GitHub push trigger
     console.log(`⚙️ Creating a GitHub push trigger for ${newRepoName}`);
     const trigger = {
       name: `deploy-${serviceName}`,
@@ -170,12 +166,11 @@ export async function createAndDeployWebsite(
       },
     };
 
-    let createdTrigger;
     const maxCreateRetries = 5;
     for (let i = 0; i < maxCreateRetries; i++) {
       try {
         console.log(`⚙️ Attempt ${i + 1}: Creating Cloud Build trigger for ${newRepoName}`);
-        [createdTrigger] = await cloudBuildClient.createBuildTrigger({
+        await cloudBuildClient.createBuildTrigger({
           projectId,
           parent: `projects/${projectId}/locations/${location}`,
           trigger,
@@ -187,15 +182,26 @@ export async function createAndDeployWebsite(
           console.log(`⚠️ Trigger creation failed. Retrying in ${3 + i * 2} seconds...`);
           await sleep(3000 + i * 2000);
         } else {
-          console.error('❌ Failed to create trigger after multiple retries:', error.response?.data || error.message);
           throw error;
         }
       }
     }
+    const serviceUrl = `https://${serviceName}-${projectHash}-${location}.a.run.app`;
+
+    console.log(`🎉 Website ${newRepoName} created and deployment initiated. ${serviceUrl}`);
     
-    console.log(`🎉 Website ${newRepoName} created and deployment initiated.`);
-    const serviceUrl = `https://${serviceName}-${projectId}.run.app`;
-    return { success: true, repo: `${githubOrg}/${newRepoName}`, url: serviceUrl };
+    // --- CORRECTED URL LOGIC ---
+    // This function's job is to set up the repo and trigger. The trigger will then deploy
+    // to Cloud Run. The final URL is not known at this exact moment.
+    // We return the unique repo name, which is the most critical piece of data.
+    // The URL is now a placeholder; a more advanced solution would use a webhook from
+    // Cloud Build to update the database with the real URL after deployment.
+    return { 
+      success: true, 
+      repo: `${githubOrg}/${newRepoName}`,
+      url: serviceUrl 
+    };
+    
   } catch (error: any) {
     await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
     console.error('❌ Failed to create website:', error.details || error.message || error);

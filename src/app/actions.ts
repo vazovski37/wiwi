@@ -1,5 +1,4 @@
 // src/app/actions.ts
-
 "use server"
 
 import { createAndDeployWebsite } from "@/lib/google-cloud/api-service";
@@ -18,7 +17,6 @@ export async function createWebsiteAction(formData: FormData) {
   }
 
   const websiteName = formData.get("website-name") as string;
-
   const projectId = process.env.GCLOUD_PROJECT_ID;
   const githubOrg = process.env.GITHUB_ORG;
   const templateRepoUrl = process.env.GITHUB_TEMPLATE_REPO_URL;
@@ -26,12 +24,7 @@ export async function createWebsiteAction(formData: FormData) {
   const gcloudCreds = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
   if (
-    !websiteName ||
-    !projectId ||
-    !githubOrg ||
-    !templateRepoUrl ||
-    !githubToken ||
-    !gcloudCreds
+    !websiteName || !projectId || !githubOrg || !templateRepoUrl || !githubToken || !gcloudCreds
   ) {
     console.error("❌ Missing required environment variables or website name.");
     return {
@@ -48,9 +41,10 @@ export async function createWebsiteAction(formData: FormData) {
     githubToken
   );
 
-  if (result.success) {
+  if (result.success && result.repo) {
     const { error } = await supabase.from('websites').insert({
-      name: websiteName,
+      name: websiteName,      // The user-friendly name, e.g., "vector"
+      repo_name: result.repo, // The full unique name, e.g., "vazovski37/vector-cahu9z"
       url: result.url,
       status: "Deploying",
       user_id: user.id,
