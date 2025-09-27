@@ -18,7 +18,9 @@ export default async function EditorPage({ params }: EditorPageProps) {
     return notFound();
   }
   
-  const { websiteName } = params;
+  // Await the params object here
+  const awaitedParams = await params; 
+  const { websiteName } = awaitedParams;
 
   const { data: website } = await supabase
     .from("websites")

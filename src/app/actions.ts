@@ -1,4 +1,3 @@
-// src/app/actions.ts
 "use server"
 
 import { createAndDeployWebsite } from "@/lib/google-cloud/api-service";
@@ -22,13 +21,15 @@ export async function createWebsiteAction(formData: FormData) {
   const templateRepoUrl = process.env.GITHUB_TEMPLATE_REPO_URL;
   const githubToken = process.env.GITHUB_TOKEN;
   const gcloudCreds = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  // --- NEW: Fetch the privileged SA email from the environment ---
+  const publisherSaEmail = process.env.PUBLISHER_SA_EMAIL;
 
   if (
-    !websiteName || !projectId || !githubOrg || !templateRepoUrl || !githubToken || !gcloudCreds
+    !websiteName || !projectId || !githubOrg || !templateRepoUrl || !githubToken || !gcloudCreds || !publisherSaEmail
   ) {
-    console.error("❌ Missing required environment variables or website name.");
+    console.error("❌ Missing required environment variables or website name. Check PUBLISHER_SA_EMAIL.");
     return {
-      message: "Server configuration error. Please contact support.",
+      message: "Server configuration error. Please ensure all required environment variables are set.",
       status: "error" as const,
     };
   }
@@ -38,7 +39,9 @@ export async function createWebsiteAction(formData: FormData) {
     githubOrg,
     websiteName,
     templateRepoUrl,
-    githubToken
+    githubToken,
+    // --- NEW: Pass the SA email to the deployment service ---
+    publisherSaEmail
   );
 
   if (result.success && result.repo) {
