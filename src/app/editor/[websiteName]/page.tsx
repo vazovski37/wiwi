@@ -18,13 +18,13 @@ export default async function EditorPage({ params }: EditorPageProps) {
     return notFound();
   }
   
-  // Await the params object here
+  // Await the params object here to resolve the Promise
   const awaitedParams = await params; 
   const { websiteName } = awaitedParams;
 
   const { data: website } = await supabase
     .from("websites")
-    .select("name, repo_name")
+    .select("name, repo_name, url") 
     .eq("name", websiteName)
     .eq("user_id", user.id)
     .single();
@@ -38,6 +38,7 @@ export default async function EditorPage({ params }: EditorPageProps) {
     <EditorClient
       websiteName={website.name}
       repoName={website.repo_name}
+      serviceUrl={website.url}
     />
   );
 }

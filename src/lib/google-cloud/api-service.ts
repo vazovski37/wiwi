@@ -342,7 +342,7 @@ export async function createAndDeployWebsite(
     await fs.rm(tempDir, { recursive: true, force: true });
     // =========================================================
 
-    const serviceUrl = `https://${newRepoName}-${projectHash}-${location}.a.run.app`;
+    const serviceUrl = `https://${newRepoName}-${projectHash}.${location}.run.app`;
 
     console.log(`🎉 Website ${newRepoName} created and deployment initiated. ${serviceUrl}`);
     
