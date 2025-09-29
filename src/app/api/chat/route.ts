@@ -14,6 +14,7 @@ export async function POST(request: Request) {
     }
 
     const result = await model.generateContent(message);
+    
     const response = result.response;
     const text = response.text();
 

@@ -1,5 +1,3 @@
-// src/components/WebsiteList.tsx
-
 import {
   Card,
   CardContent,
@@ -8,38 +6,38 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge, BadgeProps } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowUpRight, Globe, ServerCrash } from "lucide-react";
+import { Globe, ServerCrash } from "lucide-react";
+import { Database } from "@/types/supabase";
+import type { VariantProps } from "class-variance-authority";
 
-type Website = {
-  id: number;
-  name: string;
-  url: string;
-  status: string; // e.g., "Live", "Deploying", "Error"
-};
+// Use the generated type from Supabase for a single website
+type Website = Database['public']['Tables']['websites']['Row'];
+
+// Define the props interface for this component
+interface WebsiteListProps {
+    websites: Website[];
+    orgId: string;
+    projectId: string;
+}
 
 // Helper to determine badge color based on status
-const getBadgeVariant = (status: string): BadgeProps["variant"] => {
+const getBadgeVariant = (status: string | null): VariantProps<typeof badgeVariants>["variant"] => {
+  if (!status) return 'outline';
   switch (status.toLowerCase()) {
     case 'live':
-      return 'default';
     case 'deploying':
-      return 'secondary';
+      return 'default';
     case 'error':
       return 'destructive';
     default:
-      return 'outline';
+      return 'secondary';
   }
 };
 
-export default function WebsiteList({ websites }: { websites: Website[] }) {
-  // Let's add a "Live" status for demonstration
-  if (websites.length > 0 && websites[0].status === "Deploying") {
-      websites.push({ ...websites[0], id: 99, name: "Live Example", status: "Live" });
-  }
-
+export default function WebsiteList({ websites, orgId, projectId }: WebsiteListProps) {
   return (
     <div>
       {websites.length > 0 ? (
@@ -56,27 +54,26 @@ export default function WebsiteList({ websites }: { websites: Website[] }) {
                             <CardTitle className="text-lg">{site.name}</CardTitle>
                             <CardDescription>
                                 <a
-                                href={site.url}
+                                href={site.url ?? '#'}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs text-muted-foreground hover:underline flex items-center gap-1 break-all"
                                 >
-                                {site.url}
+                                {site.url ?? 'URL not available'}
                                 </a>
                             </CardDescription>
                         </div>
                     </div>
                     <Badge variant={getBadgeVariant(site.status)} className="capitalize">
-                        {site.status}
+                        {site.status ?? 'Unknown'}
                     </Badge>
                 </div>
               </CardHeader>
               <CardContent className="flex-grow" />
               <CardFooter>
                 <Button asChild className="w-full">
-                  {/* This is the line to change */}
-                  <Link href={`/editor/${site.name}`}>
-                    Manage Website
+                  <Link href={`/dashboard/org/${orgId}/project/${projectId}/website/${site.public_id}/editor`}>
+                    Open Editor
                   </Link>
                 </Button>
               </CardFooter>
@@ -93,3 +90,4 @@ export default function WebsiteList({ websites }: { websites: Website[] }) {
     </div>
   );
 }
+

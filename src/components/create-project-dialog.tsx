@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFormStatus } from 'react-dom';
-import { createWebsiteAction } from "@/app/actions";
+import { createProjectAction } from "@/app/actions";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
@@ -23,19 +23,19 @@ function SubmitButton() {
 
   return (
     <Button type="submit" aria-disabled={pending}>
-      {pending ? "Creating..." : "Create Website"}
+      {pending ? "Creating..." : "Create Project"}
     </Button>
   );
 }
 
-export function CreateWebsiteDialog({ projectId }: { projectId: number }) {
+export function CreateProjectDialog({ organizationId }: { organizationId: number }) {
     const [open, setOpen] = useState(false);
 
     const formAction = async (formData: FormData) => {
-        // Add the projectId to the form data
-        formData.append('project-id', projectId.toString());
+        // Add the organizationId to the form data
+        formData.append('organization-id', organizationId.toString());
 
-        const result = await createWebsiteAction(formData);
+        const result = await createProjectAction(formData);
         if (result.status === "success") {
             toast.success(result.message);
             setOpen(false);
@@ -51,26 +51,26 @@ export function CreateWebsiteDialog({ projectId }: { projectId: number }) {
         <DialogTrigger asChild>
             <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                Create New Website
+                Create New Project
             </Button>
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
-            <DialogTitle>Create a New Website</DialogTitle>
+            <DialogTitle>Create a New Project</DialogTitle>
             <DialogDescription>
-                Enter a name for your new web project. This will provision a new GitHub repo and start a deployment.
+                Enter a name for your new project.
             </DialogDescription>
             </DialogHeader>
             <form action={formAction}>
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="website-name" className="text-right">
+                <Label htmlFor="project-name" className="text-right">
                     Name
                 </Label>
                 <Input
-                    id="website-name"
-                    name="website-name"
-                    placeholder="E-commerce Site"
+                    id="project-name"
+                    name="project-name"
+                    placeholder="My First Website"
                     className="col-span-3"
                     required
                 />
@@ -85,3 +85,4 @@ export function CreateWebsiteDialog({ projectId }: { projectId: number }) {
     </>
   );
 }
+
